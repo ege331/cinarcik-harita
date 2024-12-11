@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çınarcık Haritası</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: 'Agency FB', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+
+        #sidebar {
+            width: 300px;
+            background: #fff5e6;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #logo img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel {
+            padding: 10px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #ff9933;
+        }
+
+        #buildingPanel input, #buildingPanel select {
+            padding: 8px;
+            border: 1px solid #ff9933;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        #buildingPanel button {
+            padding: 10px;
+            background-color: #ff9933;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        #buildingPanel button:hover {
+            background-color: #e68a00;
+        }
+
+        #earthquakePanel {
+            font-size: 14px;
+        }
+
+        #earthquakeList {
+            max-height: 150px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #earthquakeList p {
+            margin: 0 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <!-- MAG Logosu -->
+        <div id="logo">
+            <img src="mag_logo.png" alt="MAG Logo">
+        </div>
+
+        <!-- Bina Ekleme Paneli -->
+        <div id="buildingPanel" class="panel">
+            <h3>Bina Ekle</h3>
+            <input type="text" id="buildingName" placeholder="Bina İsmi">
+            <input type="text" id="buildingNo" placeholder="Bina No">
+            <input type="number" id="buildingAge" placeholder="Bina Yaşı">
+            <input type="text" id="contractor" placeholder="Müteahhit Bilgileri">
+            <select id="buildingType">
+                <option value="" disabled selected>Bina Türü Seçin</option>
+                <option value="Konut">Konut</option>
+                <option value="İşyeri">İşyeri</option>
+                <option value="Diğer">Diğer</option>
+            </select>
+            <select id="groundType">
+                <option value="" disabled selected>Zemin Durumu</option>
+                <option value="Sağlam">Sağlam</option>
+                <option value="Riskli">Riskli</option>
+            </select>
+            <input type="text" id="coordinates" placeholder="Koordinatlar (lat,lng)">
+            <button onclick="addBuilding()">Bina Ekle</button>
+        </div>
+
+        <!-- Deprem Bilgileri Paneli -->
+        <div id="earthquakePanel" class="panel">
+            <h3>Deprem Bilgileri</h3>
+            <div id="earthquakeList">
+                <p><b>Yer:</b> Çınarcık<br><b>Büyüklük:</b> 4.5<br><b>Derinlik:</b> 10km</p>
+                <p><b>Yer:</b> Yalova<br><b>Büyüklük:</b> 3.2<br><b>Derinlik:</b> 7km</p>
+                <p><b>Yer:</b> Marmara<br><b>Büyüklük:</b> 5.1<br><b>Derinlik:</b> 15km</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([40.6295, 29.2728], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        const buildings = [];
+
+        function addBuilding() {
+            const name = document.getElementById('buildingName').value;
+            const no = document.getElementById('buildingNo').value;
+            const age = document.getElementById('buildingAge').value;
+            const contractor = document.getElementById('contractor').value;
+            const type = document.getElementById('buildingType').value;
+            const ground = document.getElementById('groundType').value;
+            const coords = document.getElementById('coordinates').value.split(',');
+
+            if (name && no && age && contractor && type && ground && coords.length === 2) {
+                const lat = parseFloat(coords[0]);
+                const lng = parseFloat(coords[1]);
+
+                L.marker([lat, lng]).addTo(map)
+                    .bindPopup(`<b>${name}</b><br>No: ${no}<br>Yaş: ${age}<br>Müteahhit: ${contractor}<br>Tür: ${type}<br>Zemin: ${ground}`);
+
+                buildings.push({ name, no, age, contractor, type, ground, lat, lng });
+
+                clearInputs();
+            } else {
+                alert('Lütfen tüm alanları doldurun!');
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById('buildingName').value = '';
+            document.getElementById('buildingNo').value = '';
+            document.getElementById('buildingAge').value = '';
+            document.getElementById('contractor').value = '';
+            document.getElementById('buildingType').value = '';
+            document.getElementById('groundType').value = '';
+            document.getElementById('coordinates').value = '';
+        }
+
+        map.on('click', function (e) {
+            const coords = `${e.latlng.lat},${e.latlng.lng}`;
+            document.getElementById('coordinates').value = coords;
+        });
+    </script>
+</body>
+</html>
